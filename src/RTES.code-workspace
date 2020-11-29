@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "Embedded_Fitness",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}

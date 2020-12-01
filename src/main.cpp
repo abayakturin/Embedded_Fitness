@@ -54,16 +54,36 @@ void indicateProgress(){
   }
 }
 
+// Detect the excerise 
+int detectExercise(){
+
+  while(1){
+    if(acc.Detect() != 1){
+      serial.printf("LIS3DSH acceromoter not detected!\n\r");
+    } else {
+      serial.printf("LIS3DSH acceromoter detected! , Reading now\n\r");
+      acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
+      acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
+      serial.printf("X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+      serial.printf("Roll: %f   Pitch: %f\n\r", roll, pitch);
+    }     
+  }
+}
+
 // The workout routine
 void doWorkout(){
 
     // move = 0 - situps, move = 1 - pushups, move = 2 - jumping jacks, move = 3 - squats
-  int move = 1;
+  // int move = 1;
 
   while (true) {  // run forever
     if (userButton) {  // button is pressed
       if  (!buttonDown) {  // a new button press
-        move++;
+        // move++;
+        // doSitups(1, 15);
+        // doPushups(1,15);
+        doJumpingJacks(1, 15);
+        // doSquats(1, 10);
         buttonDown = true;     // record that the button is now down so we don't count one press lots of times
         wait_ms(10);              // ignore anything for 10ms, a very basic way to de-bounce the button. 
       } 
@@ -72,12 +92,12 @@ void doWorkout(){
     }
   }
 
-  if(move == 1) doSitups(1, 15);
-  if(move == 2) doPushups(1, 15);
-  if(move == 3) doJumpingJacks(1, 15);
-  if(move == 4) doSquats(1, 15);
+  // if(move == 1) doSitups(1, 15);
+  // if(move == 2) doPushups(1, 15);
+  // if(move == 3) doJumpingJacks(1, 15);
+  // if(move == 4) doSquats(1, 15);
 
-  move++;
+  // move++;
 }
 
 // Situps - orange light. Expected difference range between the start angle and the end angle is 150-250
@@ -113,7 +133,7 @@ void doSitups(int sets, int reps){
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
 
-          if(counted_reps % 3 == 0){
+          if(counted_reps % 5 == 0){
 
             lightsOn(true, false, false, false);
             indicateProgress();
@@ -137,16 +157,169 @@ void doSitups(int sets, int reps){
 
 // Pushpus - red light
 void doPushups(int sets, int reps){
+  
   lightsOn(false, true, false, false);
+  int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  float startZ, endZ, diffZ;
+
+  // while(reps_count < sets * reps){
+  while(1){
+    iter++;
+    if(acc.Detect() != 1){
+      serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
+    } else {
+      acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
+      acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
+      
+      if(iter % 2 != 0){
+        startZ = Z; 
+        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
+        // serial.printf("The start angle is %f\n\r", startAngle);
+        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+      }
+      else{
+        endZ = Z;
+        diffZ = abs(startZ - endZ);
+        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
+        // serial.printf("The end angle is %f\n\r", endAngle);
+        // serial.printf("The difference between angles is %f\n\r", angleDiff);
+        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+
+        if(diffZ >= 0 && diffZ <= 900){
+
+          counted_reps++;
+          serial.printf("Rep # %d\n\r", counted_reps);
+
+          if(counted_reps % 5 == 0){
+
+            lightsOn(false, true, false, false);
+            indicateProgress();
+            lightsOn(false, true, false, false);
+            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+          }
+
+          if(counted_reps == total_reps){
+            serial.printf("You have finished Pushups! Atta boy!\n\r");
+            lightsOn(false, true, false, false);
+            lightsOn(true, true, true, true);
+            break;
+          }
+        }
+      }
+      wait(3);
+    }
+  }
 }
 
 // Junping Jacks - blue light
 void doJumpingJacks(int sets, int reps){
+
   lightsOn(false, false, true, false);
+  int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  float startY, endY, diffY;
+
+  // while(reps_count < sets * reps){
+  while(1){
+    iter++;
+    if(acc.Detect() != 1){
+      serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
+    } else {
+      acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
+      acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
+      
+      if(iter % 2 != 0){
+        startY = Y; 
+        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
+        // serial.printf("The start angle is %f\n\r", startAngle);
+        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+      }
+      else{
+        endY = Y;
+        diffY = abs(startY - endY);
+        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
+        // serial.printf("The end angle is %f\n\r", endAngle);
+        // serial.printf("The difference between angles is %f\n\r", angleDiff);
+        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+
+        if(diffY >= 4000 && diffY <= 16000){
+
+          counted_reps++;
+          serial.printf("Rep # %d\n\r", counted_reps);
+
+          if(counted_reps % 5 == 0){
+
+            lightsOn(false, false, true, false);
+            indicateProgress();
+            lightsOn(false, false, true, false);
+            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+          }
+
+          if(counted_reps == total_reps){
+            serial.printf("You have finished Jumping Jacks! Atta boy!\n\r");
+            lightsOn(false, false, true, false);
+            lightsOn(true, true, true, true);
+            break;
+          }
+        }
+      }
+      wait(1);
+    }
+  }
 }
 
 // Squats - green light
 void doSquats(int sets, int reps){
+
   lightsOn(false, false, false, true);
+  int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  float startY, endY, diffY;
+
+  // while(reps_count < sets * reps){
+  while(1){
+    iter++;
+    if(acc.Detect() != 1){
+      serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
+    } else {
+      acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
+      acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
+      
+      if(iter % 2 != 0){
+        startY = Y; 
+        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
+        // serial.printf("The start angle is %f\n\r", startAngle);
+        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+      }
+      else{
+        endY = Y;
+        diffY = abs(startY - endY);
+        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
+        // serial.printf("The end angle is %f\n\r", endAngle);
+        // serial.printf("The difference between angles is %f\n\r", angleDiff);
+        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+
+        if(diffY >= 1000 && diffY <= 2000){
+
+          counted_reps++;
+          serial.printf("Rep # %d\n\r", counted_reps);
+
+          if(counted_reps % 5 == 0){
+
+            lightsOn(false, false, false, true);
+            indicateProgress();
+            lightsOn(false, false, false, true);
+            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+          }
+
+          if(counted_reps == total_reps){
+            serial.printf("You have finished Squats! Atta boy!\n\r");
+            lightsOn(false, false, false, true);
+            lightsOn(true, true, true, true);
+            break;
+          }
+        }
+      }
+      wait(3);
+    }
+  }
 }
 

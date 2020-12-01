@@ -35,7 +35,7 @@ void doSquats(int sets, int reps); // Squats
 
 int main()
 {
-  doWorkout();
+  detectExercise();
   return 0;
 }
 
@@ -64,7 +64,6 @@ void indicateProgress(){
 int detectExercise(){
 
   int iter = 0;
-  float startAngle, endAngle, angleDiff;
 
   while(1){
     iter++;

@@ -18,20 +18,25 @@ float roll, pitch;      // float variables for angle
 bool buttonDown = false; // User button default
 int16_t startY, startZ, endY, endZ, diffY, diffZ; // Tracking the difference in the coordinates
 float startAngle, endAngle, angleDiff; // Tracking the difference in angle
-bool isSitups = angleDiff >= 140 && angleDiff <= 260; // Check if the angle change fit Situps
-bool isPushups = diffZ >= 0 && diffZ <= 900; // Check if the coordinate changes fit Pushups
-bool isJumpingJacks = diffY >= 4000 && diffY <= 16000; // Check if the coordinate changes fit Jumping Jacks
-bool isSquats = diffY >= 1000 && diffY <= 2000; // Check if the coordinate changes fit Squat
+int isSitups[] = {140, 260}; // Check if the angle change fit Situps
+int isPushups[] = {200, 900}; // Check if the coordinate changes fit Pushups
+int isJumpingJacks[] = {4000, 16000}; // Check if the coordinate changes fit Jumping Jacks
+int isSquats[] = {1000, 2000}; // Check if the coordinate changes fit Squat
+string exercisesCompleted = ""; // The progress message shown after each completed workout
+int numSets = 1, numReps = 10, numRepMessage = 5; // The number of sets, reps in each set, and the rep message period
 
 // Functions
 void lightsOn(bool orange=false, bool red=false, bool blue=false, bool green=false); // Trigger certain LEDs
-void indicateProgress(); // Flash the LEDs to indicate the workout progress
-void doWorkout(); // Contains the fixed programmed routine
+void indicateProgress(int mode, int detectedExercise); // Flash the LEDs to indicate the workout progress
+void doWorkout(int exercise); // Contains the fixed programmed routine
 int detectExercise(); // Detect what exercise has occured based on the accelerometer data
-void doSitups(int sets, int reps); // Situps
-void doPushups(int sets, int reps); // Pushups
-void doJumpingJacks(int sets, int reps); // Jumping Jacks
-void doSquats(int sets, int reps); // Squats
+void doSitups(int sets, int reps, int repMessage); // Situps
+void doPushups(int sets, int reps, int repMessage); // Pushups
+void doJumpingJacks(int sets, int reps, int repMessage); // Jumping Jacks
+void doSquats(int sets, int reps, int repMessage); // Squats
+// Completion status for the exercises
+bool pushupsDone = false, situpsDone = false, squatsDone = false, jumpingJacksDone = false;  
+
 
 int main()
 {
@@ -40,6 +45,7 @@ int main()
 }
 
 // Switch LEDs
+// Situps - orange, Pushups - red, Jumping Jacks - blue, Squats - green
 void lightsOn(bool orange, bool red, bool blue, bool green){
 
   if(orange == true) led3 = !led3;
@@ -49,14 +55,24 @@ void lightsOn(bool orange, bool red, bool blue, bool green){
 }
 
 // End of n-reps
-void indicateProgress(){
+void indicateProgress(int mode, int detectedExercise){
 
-  for(int i = 0; i < 5; i++){
+  if(mode == 1){
 
-    wait(1);
-    lightsOn(true, true, true, true);
-    wait(1);
-    lightsOn(true, true, true, true);
+    for(int i = 0; i < 5; i++){
+
+      wait(1);
+      lightsOn(true, true, true, true);
+      wait(1);
+      lightsOn(true, true, true, true);
+    }
+
+  } else if(mode == 2){
+
+    if(detectedExercise == 1) lightsOn(true, false, false, false);
+    else if(detectedExercise == 2) lightsOn(false, true, false, false);
+    else if(detectedExercise == 3) lightsOn(false, false, true, false);
+    else if(detectedExercise == 4) lightsOn(true, false, false, true);
   }
 }
 
@@ -64,7 +80,6 @@ void indicateProgress(){
 int detectExercise(){
 
   int iter = 0;
-  bool pushupsDone = false, situpsDone = false, squatsDone = false, jumpingJacksDone = false;
 
   while(1){
     iter++;
@@ -77,6 +92,8 @@ int detectExercise(){
       if(iter % 2 != 0){
         startZ = Z;
         startY = Y; 
+        serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted);
+        serial.printf("Iteration # %d\n\r", iter / 2 + 1);
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
         
         startAngle = pitch; 
@@ -92,22 +109,35 @@ int detectExercise(){
         angleDiff = abs(startAngle - endAngle);
         serial.printf("The end angle is %f\n\r", endAngle);
         serial.printf("The difference between angles is %f\n\r", angleDiff);
+        serial.printf("-------------------------------------------\n\r");
 
-        if(isPushups && !pushupsDone){
-          pushupsDone = true;
+        if(situpsDone && pushupsDone && jumpingJacksDone && squatsDone){
+
+          serial.printf("You have completed:\n\r%d reps of Situps\n\r%d reps of Pushups\n\r%d reps of Jumping Jacks\n\r%d reps of Squats\n\rWell done!\n\r");
+        }
+
+        if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1] && !situpsDone){
+          serial.printf("Detected Situps. Starting the workout...\n\r");
+          situpsDone = true;
           doWorkout(1);
-        } else if(isSquats && !squatsDone) {
-          squatsDone = true;
+        }
+        if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone){
+          serial.printf("Detected Pushups. Starting the workout...\n\r");
+          pushupsDone = true;
           doWorkout(2);
-        } else if(isJumpingJacks && !jumpingJacksDone){
+        }
+        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone){
+          serial.printf("Detected Jumping Jacks. Starting the workout...\n\r");
           jumpingJacksDone = true;
           doWorkout(3);
-        } else if(isSitups && !situpsDone){
-          situpsDone = true;
+        }
+        if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone) {
+          serial.printf("Detected Squats. Starting the workout...\n\r");
+          squatsDone = true;
           doWorkout(4);
         }
       }
-      wait(3);
+      wait(2);
     }
   }
 }
@@ -118,10 +148,10 @@ void doWorkout(int exercise){
   while (true) {  // run forever
     if (userButton) {  // button is pressed
       if  (!buttonDown) {  // a new button press
-        if(exercise == 1) doSitups(1, 15);
-        else if(exercise == 2) doPushups(1,15);
-        else if(exercise == 3) doJumpingJacks(1, 15);
-        else if(exercise == 4) doSquats(1, 10);
+        if(exercise == 1) doSitups(numSets,numReps,numRepMessage);
+        else if(exercise == 2) doPushups(numSets,numReps,numRepMessage);
+        else if(exercise == 3) doJumpingJacks(numSets,numReps,numRepMessage);
+        else if(exercise == 4) doSquats(numSets,numReps,numRepMessage);
         buttonDown = true; // record that the button is now down so we don't count one press lots of times
         wait_ms(10); // ignore anything for 10ms, a very basic way to de-bounce the button. 
       } 
@@ -132,10 +162,11 @@ void doWorkout(int exercise){
 }
 
 // Situps - orange light. Expected difference range between the start angle and the end angle is 150-250
-void doSitups(int sets, int reps){ 
+void doSitups(int sets, int reps, int repMessage){ 
 
   lightsOn(true, false, false, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  serial.printf("Starting Situps...\n\r");
 
   while(1){
     iter++;
@@ -162,19 +193,20 @@ void doSitups(int sets, int reps){
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
 
-          if(counted_reps % 5 == 0){
+          if(counted_reps % repMessage == 0){
 
             lightsOn(true, false, false, false);
-            indicateProgress();
+            indicateProgress(1, 1);
             lightsOn(true, false, false, false);
-            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+            serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
 
           if(counted_reps == total_reps){
             serial.printf("You have finished Situps! Atta boy!\n\r");
             lightsOn(true, false, false, false);
             lightsOn(true, true, true, true);
-            break;
+            exercisesCompleted += " Situps";
+            detectExercise();
           }
         }
       }
@@ -184,10 +216,11 @@ void doSitups(int sets, int reps){
 }
 
 // Pushpus - red light
-void doPushups(int sets, int reps){
+void doPushups(int sets, int reps, int repMessage){
   
   lightsOn(false, true, false, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  serial.printf("Starting Pushups...\n\r");
 
   while(1){
     iter++;
@@ -211,19 +244,20 @@ void doPushups(int sets, int reps){
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
 
-          if(counted_reps % 5 == 0){
+          if(counted_reps % repMessage == 0){
 
             lightsOn(false, true, false, false);
-            indicateProgress();
+            indicateProgress(1, 1);
             lightsOn(false, true, false, false);
-            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+            serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
 
           if(counted_reps == total_reps){
             serial.printf("You have finished Pushups! Atta boy!\n\r");
             lightsOn(false, true, false, false);
             lightsOn(true, true, true, true);
-            break;
+            exercisesCompleted += " Pushups ";
+            detectExercise();
           }
         }
       }
@@ -233,10 +267,11 @@ void doPushups(int sets, int reps){
 }
 
 // Junping Jacks - blue light
-void doJumpingJacks(int sets, int reps){
+void doJumpingJacks(int sets, int reps, int repMessage){
 
   lightsOn(false, false, true, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  serial.printf("Starting Jumping Jacks...\n\r");
 
   while(1){
     iter++;
@@ -260,19 +295,20 @@ void doJumpingJacks(int sets, int reps){
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
 
-          if(counted_reps % 5 == 0){
+          if(counted_reps % repMessage == 0){
 
             lightsOn(false, false, true, false);
-            indicateProgress();
+            indicateProgress(1, 1);
             lightsOn(false, false, true, false);
-            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+            serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
 
           if(counted_reps == total_reps){
             serial.printf("You have finished Jumping Jacks! Atta boy!\n\r");
             lightsOn(false, false, true, false);
             lightsOn(true, true, true, true);
-            break;
+            exercisesCompleted += " Jumping Jacks ";
+            detectExercise();
           }
         }
       }
@@ -282,10 +318,11 @@ void doJumpingJacks(int sets, int reps){
 }
 
 // Squats - green light
-void doSquats(int sets, int reps){
+void doSquats(int sets, int reps, int repMessage){
 
   lightsOn(false, false, false, true);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
+  serial.printf("Starting Squats...\n\r");
 
   while(1){
     iter++;
@@ -309,19 +346,20 @@ void doSquats(int sets, int reps){
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
 
-          if(counted_reps % 5 == 0){
+          if(counted_reps % repMessage == 0){
 
             lightsOn(false, false, false, true);
-            indicateProgress();
+            indicateProgress(1, 1);
             lightsOn(false, false, false, true);
-            serial.printf("You have done 5 reps! Keep going! %d reps left\n\r", total_reps - counted_reps);
+            serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
 
           if(counted_reps == total_reps){
             serial.printf("You have finished Squats! Atta boy!\n\r");
             lightsOn(false, false, false, true);
             lightsOn(true, true, true, true);
-            break;
+            exercisesCompleted += " Squats ";
+            detectExercise();
           }
         }
       }

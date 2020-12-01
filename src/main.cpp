@@ -64,6 +64,7 @@ void indicateProgress(){
 int detectExercise(){
 
   int iter = 0;
+  bool pushupsDone = false, situpsDone = false, squatsDone = false, jumpingJacksDone = false;
 
   while(1){
     iter++;
@@ -92,13 +93,17 @@ int detectExercise(){
         serial.printf("The end angle is %f\n\r", endAngle);
         serial.printf("The difference between angles is %f\n\r", angleDiff);
 
-        if(isPushups){
+        if(isPushups && !pushupsDone){
+          pushupsDone = true;
           doWorkout(1);
-        } else if(isSquats) {
+        } else if(isSquats && !squatsDone) {
+          squatsDone = true;
           doWorkout(2);
-        } else if(isJumpingJacks){
+        } else if(isJumpingJacks && !jumpingJacksDone){
+          jumpingJacksDone = true;
           doWorkout(3);
-        } else if(isSitups){
+        } else if(isSitups && !situpsDone){
+          situpsDone = true;
           doWorkout(4);
         }
       }

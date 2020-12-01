@@ -16,6 +16,12 @@ DigitalOut led6(LED6); // blue
 int16_t X, Y, Z;        // signed integer variables for X,Y,Z values
 float roll, pitch;      // float variables for angle
 bool buttonDown = false; // User button default
+int16_t startY, startZ, endY, endZ, diffY, diffZ; // Tracking the difference in the coordinates
+float startAngle, endAngle, angleDiff; // Tracking the difference in angle
+bool isSitups = angleDiff >= 140 && angleDiff <= 260; // Check if the angle change fit Situps
+bool isPushups = diffZ >= 0 && diffZ <= 900; // Check if the coordinate changes fit Pushups
+bool isJumpingJacks = diffY >= 4000 && diffY <= 16000; // Check if the coordinate changes fit Jumping Jacks
+bool isSquats = diffY >= 1000 && diffY <= 2000; // Check if the coordinate changes fit Squat
 
 // Functions
 void lightsOn(bool orange=false, bool red=false, bool blue=false, bool green=false); // Trigger certain LEDs
@@ -57,47 +63,68 @@ void indicateProgress(){
 // Detect the excerise 
 int detectExercise(){
 
+  int iter = 0;
+  float startAngle, endAngle, angleDiff;
+
   while(1){
+    iter++;
     if(acc.Detect() != 1){
-      serial.printf("LIS3DSH acceromoter not detected!\n\r");
+      serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
     } else {
-      serial.printf("LIS3DSH acceromoter detected! , Reading now\n\r");
       acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
       acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
-      serial.printf("X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
-      serial.printf("Roll: %f   Pitch: %f\n\r", roll, pitch);
-    }     
+      
+      if(iter % 2 != 0){
+        startZ = Z;
+        startY = Y; 
+        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+        
+        startAngle = pitch; 
+        serial.printf("The start angle is %f\n\r", startAngle);
+      } else {
+        endZ = Z;
+        endY = Y;
+        diffZ = abs(startZ - endZ);
+        diffY = abs(startY - endY);
+        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+
+        endAngle = pitch;
+        angleDiff = abs(startAngle - endAngle);
+        serial.printf("The end angle is %f\n\r", endAngle);
+        serial.printf("The difference between angles is %f\n\r", angleDiff);
+
+        if(isPushups){
+          doWorkout(1);
+        } else if(isSquats) {
+          doWorkout(2);
+        } else if(isJumpingJacks){
+          doWorkout(3);
+        } else if(isSitups){
+          doWorkout(4);
+        }
+      }
+      wait(3);
+    }
   }
 }
 
 // The workout routine
-void doWorkout(){
-
-    // move = 0 - situps, move = 1 - pushups, move = 2 - jumping jacks, move = 3 - squats
-  // int move = 1;
+void doWorkout(int exercise){
 
   while (true) {  // run forever
     if (userButton) {  // button is pressed
       if  (!buttonDown) {  // a new button press
-        // move++;
-        // doSitups(1, 15);
-        // doPushups(1,15);
-        doJumpingJacks(1, 15);
-        // doSquats(1, 10);
-        buttonDown = true;     // record that the button is now down so we don't count one press lots of times
-        wait_ms(10);              // ignore anything for 10ms, a very basic way to de-bounce the button. 
+        if(exercise == 1) doSitups(1, 15);
+        else if(exercise == 2) doPushups(1,15);
+        else if(exercise == 3) doJumpingJacks(1, 15);
+        else if(exercise == 4) doSquats(1, 10);
+        buttonDown = true; // record that the button is now down so we don't count one press lots of times
+        wait_ms(10); // ignore anything for 10ms, a very basic way to de-bounce the button. 
       } 
     } else { // button isn't pressed
       buttonDown = false;
     }
   }
-
-  // if(move == 1) doSitups(1, 15);
-  // if(move == 2) doPushups(1, 15);
-  // if(move == 3) doJumpingJacks(1, 15);
-  // if(move == 4) doSquats(1, 15);
-
-  // move++;
 }
 
 // Situps - orange light. Expected difference range between the start angle and the end angle is 150-250
@@ -105,9 +132,7 @@ void doSitups(int sets, int reps){
 
   lightsOn(true, false, false, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
-  float startAngle, endAngle, angleDiff;
 
-  // while(reps_count < sets * reps){
   while(1){
     iter++;
     if(acc.Detect() != 1){
@@ -118,17 +143,17 @@ void doSitups(int sets, int reps){
       
       if(iter % 2 != 0){
         startAngle = pitch; 
-        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
+
         serial.printf("The start angle is %f\n\r", startAngle);
       }
       else{
         endAngle = pitch;
         angleDiff = abs(startAngle - endAngle);
-        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
+
         serial.printf("The end angle is %f\n\r", endAngle);
         serial.printf("The difference between angles is %f\n\r", angleDiff);
 
-        if(angleDiff >= 140 && angleDiff <= 260){
+        if(isSitups){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -149,7 +174,6 @@ void doSitups(int sets, int reps){
           }
         }
       }
-      // serial.printf("X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       wait(3);
     }
   }
@@ -160,9 +184,7 @@ void doPushups(int sets, int reps){
   
   lightsOn(false, true, false, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
-  float startZ, endZ, diffZ;
 
-  // while(reps_count < sets * reps){
   while(1){
     iter++;
     if(acc.Detect() != 1){
@@ -173,19 +195,14 @@ void doPushups(int sets, int reps){
       
       if(iter % 2 != 0){
         startZ = Z; 
-        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
-        // serial.printf("The start angle is %f\n\r", startAngle);
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
         endZ = Z;
         diffZ = abs(startZ - endZ);
-        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
-        // serial.printf("The end angle is %f\n\r", endAngle);
-        // serial.printf("The difference between angles is %f\n\r", angleDiff);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(diffZ >= 0 && diffZ <= 900){
+        if(isPushups){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -216,9 +233,7 @@ void doJumpingJacks(int sets, int reps){
 
   lightsOn(false, false, true, false);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
-  float startY, endY, diffY;
 
-  // while(reps_count < sets * reps){
   while(1){
     iter++;
     if(acc.Detect() != 1){
@@ -229,19 +244,14 @@ void doJumpingJacks(int sets, int reps){
       
       if(iter % 2 != 0){
         startY = Y; 
-        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
-        // serial.printf("The start angle is %f\n\r", startAngle);
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
         endY = Y;
         diffY = abs(startY - endY);
-        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
-        // serial.printf("The end angle is %f\n\r", endAngle);
-        // serial.printf("The difference between angles is %f\n\r", angleDiff);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(diffY >= 4000 && diffY <= 16000){
+        if(isJumpingJacks){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -272,9 +282,7 @@ void doSquats(int sets, int reps){
 
   lightsOn(false, false, false, true);
   int iter = 0, counted_reps = 0, total_reps = sets * reps;
-  float startY, endY, diffY;
 
-  // while(reps_count < sets * reps){
   while(1){
     iter++;
     if(acc.Detect() != 1){
@@ -285,19 +293,14 @@ void doSquats(int sets, int reps){
       
       if(iter % 2 != 0){
         startY = Y; 
-        // serial.printf("LIS3DSH acceleromoter detected! , Reading now. Iteration # %d\n\r", iter / 2 + 1);
-        // serial.printf("The start angle is %f\n\r", startAngle);
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
         endY = Y;
         diffY = abs(startY - endY);
-        // serial.printf("Roll(Y-Z angle): %f   Pitch(X-Z angle): %f\n\r", roll, pitch);
-        // serial.printf("The end angle is %f\n\r", endAngle);
-        // serial.printf("The difference between angles is %f\n\r", angleDiff);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(diffY >= 1000 && diffY <= 2000){
+        if(isSquats){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);

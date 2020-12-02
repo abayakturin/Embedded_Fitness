@@ -19,9 +19,9 @@ bool buttonDown = false; // User button default
 int16_t startY, startZ, endY, endZ, diffY, diffZ; // Tracking the difference in the coordinates
 float startAngle, endAngle, angleDiff; // Tracking the difference in angle
 int isSitups[] = {140, 260}; // Check if the angle change fit Situps
-int isPushups[] = {200, 600}; // Check if the coordinate changes fit Pushups
-int isJumpingJacks[] = {30, 200}; // Check if the coordinate changes fit Jumping Jacks
-int isSquats[] = {400, 500}; // Check if the coordinate changes fit Squat
+int isPushups[] = {200, 1000}; // Check if the coordinate changes fit Pushups
+int isJumpingJacks[] = {30, 20}; // Check if the coordinate changes fit Jumping Jacks
+int isSquats[] = {1500, 2500}; // Check if the coordinate changes fit Squat
 string exercisesCompleted = ""; // The progress message shown after each completed workout
 int numSets = 1, numReps = 10, numRepMessage = 5; // The number of sets, reps in each set, and the rep message period
 
@@ -40,11 +40,11 @@ bool pushupsDone = false, situpsDone = false, squatsDone = false, jumpingJacksDo
 
 int main()
 {
-  // detectExercise();
+  detectExercise();
   // doSitups(1,100,100);
   // doPushups(1,100,100);
   // doJumpingJacks(1,100,100);
-  doSquats(1,100,100);
+  // doSquats(1,100,100);
   return 0;
 }
 
@@ -63,7 +63,7 @@ void indicateProgress(int mode, int detectedExercise = 0){
 
   if(mode == 1){
 
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < 3; i++){
 
       wait(1);
       lightsOn(true, true, true, true);
@@ -73,79 +73,124 @@ void indicateProgress(int mode, int detectedExercise = 0){
 
   } else if(mode == 2){
 
-    if(detectedExercise == 1) lightsOn(true, false, false, false);
-    else if(detectedExercise == 2) lightsOn(false, true, false, false);
-    else if(detectedExercise == 3) lightsOn(false, false, true, false);
-    else if(detectedExercise == 4) lightsOn(true, false, false, true);
+    if(detectedExercise == 1){
+      for(int i = 0; i < 5; i++){
+
+        wait(1);
+        lightsOn(true, false, false, false);
+        wait(1);
+        lightsOn(true, false, false, false);
+      }
+    }
+    else if(detectedExercise == 2){
+      for(int i = 0; i < 5; i++){
+
+        wait(1);
+        lightsOn(false, true, false, false);
+        wait(1);
+        lightsOn(false, true, false, false);
+      }
+    }
+    else if(detectedExercise == 3){
+      {
+      for(int i = 0; i < 5; i++){
+
+        wait(1);
+        lightsOn(false, false, true, false);
+        wait(1);
+        lightsOn(false, false, true, false);
+      }
+    }
+    }
+    else if(detectedExercise == 4){
+      for(int i = 0; i < 5; i++){
+
+        wait(1);
+        lightsOn(false, false, false, true);
+        wait(1);
+        lightsOn(false, false, false, true);
+      }
+    }
   }
 }
 
 // Detect the excerise 
 int detectExercise(){
 
+  indicateProgress(1);
+
   int iter = 0;
+  while (true) {  // run forever
+    if (userButton) {  // button is pressed
+      if  (!buttonDown) {  // a new button press
+        while(1){
+          iter++;
+          if(acc.Detect() != 1){
+            serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
+          } else {
+            acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
+            acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
+            
+            if(iter % 2 != 0){
+              startZ = Z;
+              startY = Y; 
+              serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted.c_str());
+              serial.printf("Iteration # %d\n\r", iter / 2 + 1);
+              serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+              
+              startAngle = pitch; 
+              serial.printf("The start angle is %f\n\r", startAngle);
+            } else {
+              endZ = Z;
+              endY = Y;
+              diffZ = abs(startZ - endZ);
+              diffY = abs(startY - endY);
+              serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-  while(1){
-    iter++;
-    if(acc.Detect() != 1){
-      serial.printf("LIS3DSH acceleromoeter not detected!\n\r");
-    } else {
-      acc.ReadData(&X, &Y, &Z);           // reads X, Y, Z values
-      acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
-      
-      if(iter % 2 != 0){
-        startZ = Z;
-        startY = Y; 
-        serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted.c_str());
-        serial.printf("Iteration # %d\n\r", iter / 2 + 1);
-        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
-        
-        startAngle = pitch; 
-        serial.printf("The start angle is %f\n\r", startAngle);
-      } else {
-        endZ = Z;
-        endY = Y;
-        diffZ = abs(startZ - endZ);
-        diffY = abs(startY - endY);
-        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+              endAngle = pitch;
+              angleDiff = abs(startAngle - endAngle);
+              serial.printf("The end angle is %f\n\r", endAngle);
+              serial.printf("The difference between angles is %f\n\r", angleDiff);
+              serial.printf("-------------------------------------------\n\r");
 
-        endAngle = pitch;
-        angleDiff = abs(startAngle - endAngle);
-        serial.printf("The end angle is %f\n\r", endAngle);
-        serial.printf("The difference between angles is %f\n\r", angleDiff);
-        serial.printf("-------------------------------------------\n\r");
+              if(situpsDone && pushupsDone && jumpingJacksDone && squatsDone){
 
-        if(situpsDone && pushupsDone && jumpingJacksDone && squatsDone){
+                serial.printf("You have completed:\n\r%d reps of Situps\n\r%d reps of Pushups\n\r%d reps of Jumping Jacks\n\r%d reps of Squats\n\rWell done!\n\r");
+              }
 
-          serial.printf("You have completed:\n\r%d reps of Situps\n\r%d reps of Pushups\n\r%d reps of Jumping Jacks\n\r%d reps of Squats\n\rWell done!\n\r");
+              if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1] && !situpsDone){
+                serial.printf("Detected Situps. Starting the workout...\n\r");
+                situpsDone = true;
+                indicateProgress(2, 1); // Indicates what exercise has been identified
+                doWorkout(1);
+              }
+              if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone && angleDiff < 50){
+                serial.printf("Detected Pushups. Starting the workout...\n\r");
+                pushupsDone = true;
+                indicateProgress(2, 2);
+                doWorkout(2);
+              }
+              if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone && angleDiff < 50){
+                serial.printf("Detected Jumping Jacks. Starting the workout...\n\r");
+                jumpingJacksDone = true;
+                indicateProgress(2, 3);
+                doWorkout(3);
+              }
+              if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone && angleDiff < 50) {
+                serial.printf("Detected Squats. Starting the workout...\n\r");
+                squatsDone = true;
+                indicateProgress(2, 4);
+                doWorkout(4);
+              }
+            }
+            wait(2);
+          }
         }
-
-        if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1] && !situpsDone){
-          serial.printf("Detected Situps. Starting the workout...\n\r");
-          situpsDone = true;
-          indicateProgress(2, 1); // Indicates what exercise has been identified
-          doWorkout(1);
-        }
-        if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone && angleDiff < 50){
-          serial.printf("Detected Pushups. Starting the workout...\n\r");
-          pushupsDone = true;
-          indicateProgress(2, 1);
-          doWorkout(2);
-        }
-        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone && angleDiff < 50){
-          serial.printf("Detected Jumping Jacks. Starting the workout...\n\r");
-          jumpingJacksDone = true;
-          indicateProgress(2, 1);
-          doWorkout(3);
-        }
-        if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone && angleDiff < 50) {
-          serial.printf("Detected Squats. Starting the workout...\n\r");
-          squatsDone = true;
-          indicateProgress(2, 1);
-          doWorkout(4);
-        }
+        buttonDown = true;
+        wait_ms(10);
       }
-      wait(2);
+    } else {
+      buttonDown = false;
     }
   }
 }
@@ -320,7 +365,7 @@ void doJumpingJacks(int sets, int reps, int repMessage){
           }
         }
       }
-      wait(3);
+      wait(1);
     }
   }
 }

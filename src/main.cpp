@@ -19,9 +19,9 @@ bool buttonDown = false; // User button default
 int16_t startY, startZ, endY, endZ, diffY, diffZ; // Tracking the difference in the coordinates
 float startAngle, endAngle, angleDiff; // Tracking the difference in angle
 int isSitups[] = {140, 260}; // Check if the angle change fit Situps
-int isPushups[] = {200, 900}; // Check if the coordinate changes fit Pushups
-int isJumpingJacks[] = {4000, 16000}; // Check if the coordinate changes fit Jumping Jacks
-int isSquats[] = {1000, 2000}; // Check if the coordinate changes fit Squat
+int isPushups[] = {200, 600}; // Check if the coordinate changes fit Pushups
+int isJumpingJacks[] = {30, 200}; // Check if the coordinate changes fit Jumping Jacks
+int isSquats[] = {400, 500}; // Check if the coordinate changes fit Squat
 string exercisesCompleted = ""; // The progress message shown after each completed workout
 int numSets = 1, numReps = 10, numRepMessage = 5; // The number of sets, reps in each set, and the rep message period
 
@@ -40,7 +40,11 @@ bool pushupsDone = false, situpsDone = false, squatsDone = false, jumpingJacksDo
 
 int main()
 {
-  detectExercise();
+  // detectExercise();
+  // doSitups(1,100,100);
+  // doPushups(1,100,100);
+  // doJumpingJacks(1,100,100);
+  doSquats(1,100,100);
   return 0;
 }
 
@@ -55,7 +59,7 @@ void lightsOn(bool orange, bool red, bool blue, bool green){
 }
 
 // End of n-reps
-void indicateProgress(int mode, int detectedExercise){
+void indicateProgress(int mode, int detectedExercise = 0){
 
   if(mode == 1){
 
@@ -92,7 +96,7 @@ int detectExercise(){
       if(iter % 2 != 0){
         startZ = Z;
         startY = Y; 
-        serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted);
+        serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted.c_str());
         serial.printf("Iteration # %d\n\r", iter / 2 + 1);
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
         
@@ -119,21 +123,25 @@ int detectExercise(){
         if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1] && !situpsDone){
           serial.printf("Detected Situps. Starting the workout...\n\r");
           situpsDone = true;
+          indicateProgress(2, 1); // Indicates what exercise has been identified
           doWorkout(1);
         }
-        if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone){
+        if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone && angleDiff < 50){
           serial.printf("Detected Pushups. Starting the workout...\n\r");
           pushupsDone = true;
+          indicateProgress(2, 1);
           doWorkout(2);
         }
-        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone){
+        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone && angleDiff < 50){
           serial.printf("Detected Jumping Jacks. Starting the workout...\n\r");
           jumpingJacksDone = true;
+          indicateProgress(2, 1);
           doWorkout(3);
         }
-        if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone) {
+        if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone && angleDiff < 50) {
           serial.printf("Detected Squats. Starting the workout...\n\r");
           squatsDone = true;
+          indicateProgress(2, 1);
           doWorkout(4);
         }
       }
@@ -188,7 +196,7 @@ void doSitups(int sets, int reps, int repMessage){
         serial.printf("The end angle is %f\n\r", endAngle);
         serial.printf("The difference between angles is %f\n\r", angleDiff);
 
-        if(isSitups){
+        if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -196,7 +204,7 @@ void doSitups(int sets, int reps, int repMessage){
           if(counted_reps % repMessage == 0){
 
             lightsOn(true, false, false, false);
-            indicateProgress(1, 1);
+            indicateProgress(1);
             lightsOn(true, false, false, false);
             serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
@@ -239,7 +247,7 @@ void doPushups(int sets, int reps, int repMessage){
         diffZ = abs(startZ - endZ);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isPushups){
+        if(isPushups[0] <= diffZ && diffZ <= isPushups[1]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -247,7 +255,7 @@ void doPushups(int sets, int reps, int repMessage){
           if(counted_reps % repMessage == 0){
 
             lightsOn(false, true, false, false);
-            indicateProgress(1, 1);
+            indicateProgress(1);
             lightsOn(false, true, false, false);
             serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
@@ -290,7 +298,7 @@ void doJumpingJacks(int sets, int reps, int repMessage){
         diffY = abs(startY - endY);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isJumpingJacks){
+        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -298,7 +306,7 @@ void doJumpingJacks(int sets, int reps, int repMessage){
           if(counted_reps % repMessage == 0){
 
             lightsOn(false, false, true, false);
-            indicateProgress(1, 1);
+            indicateProgress(1);
             lightsOn(false, false, true, false);
             serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }
@@ -312,7 +320,7 @@ void doJumpingJacks(int sets, int reps, int repMessage){
           }
         }
       }
-      wait(1);
+      wait(3);
     }
   }
 }
@@ -341,7 +349,7 @@ void doSquats(int sets, int reps, int repMessage){
         diffY = abs(startY - endY);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isSquats){
+        if(isSquats[0] <= diffY && diffY <= isSquats[1]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -349,7 +357,7 @@ void doSquats(int sets, int reps, int repMessage){
           if(counted_reps % repMessage == 0){
 
             lightsOn(false, false, false, true);
-            indicateProgress(1, 1);
+            indicateProgress(1);
             lightsOn(false, false, false, true);
             serial.printf("You have done %d reps! Keep going! %d reps left\n\r", repMessage, total_reps - counted_reps);
           }

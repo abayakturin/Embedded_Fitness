@@ -16,12 +16,12 @@ DigitalOut led6(LED6); // blue
 int16_t X, Y, Z;        // signed integer variables for X,Y,Z values
 float roll, pitch;      // float variables for angle
 bool buttonDown = false; // User button default
-int16_t startY, startZ, endY, endZ, diffY, diffZ; // Tracking the difference in the coordinates
+int16_t startX, endX, startY, startZ, endY, endZ, diffX, diffY, diffZ; // Tracking the difference in the coordinates
 float startAngle, endAngle, angleDiff; // Tracking the difference in angle
-int isSitups[] = {140, 260}; // Check if the angle change fit Situps
-int isPushups[] = {200, 1000}; // Check if the coordinate changes fit Pushups
-int isJumpingJacks[] = {30, 20}; // Check if the coordinate changes fit Jumping Jacks
-int isSquats[] = {1500, 2500}; // Check if the coordinate changes fit Squat
+int isSitups[] = {4000, 6000, 1400, 3000, 100, 1200, 80, 160}; // Check if the angle change fit Situps, {sAngle,eAngle,sX,eX,sY,eY,sZ,eZ}
+int isPushups[] = {3000, 15000, 4000, 22000, 10000, 17000}; // Check if the coordinate changes fit Pushups, {sX,eX,sY,eY,sZ,eZ}
+int isJumpingJacks[] = {5001, 15000, 3000, 20000, 200, 6000}; // Check if the coordinate changes fit Jumping Jacks, {sX,eX,sY,eY,sZ,eZ}
+int isSquats[] = {5000, 10000, 100, 3000, 1000, 5000}; // Check if the coordinate changes fit Squat, {sX,eX,sY,eY,sZ,eZ}
 string exercisesCompleted = ""; // The progress message shown after each completed workout
 int numSets = 1, numReps = 10, numRepMessage = 5; // The number of sets, reps in each set, and the rep message period
 
@@ -132,6 +132,7 @@ int detectExercise(){
             acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
             
             if(iter % 2 != 0){
+              startX = X;
               startZ = Z;
               startY = Y; 
               serial.printf("Exercises completed so far: %s\n\r", exercisesCompleted.c_str());
@@ -141,8 +142,10 @@ int detectExercise(){
               startAngle = pitch; 
               serial.printf("The start angle is %f\n\r", startAngle);
             } else {
+              endX = X;
               endZ = Z;
               endY = Y;
+              diffX = abs(startX - endX);
               diffZ = abs(startZ - endZ);
               diffY = abs(startY - endY);
               serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
@@ -158,25 +161,25 @@ int detectExercise(){
                 serial.printf("You have completed:\n\r%d reps of Situps\n\r%d reps of Pushups\n\r%d reps of Jumping Jacks\n\r%d reps of Squats\n\rWell done!\n\r");
               }
 
-              if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1] && !situpsDone){
+              if(isSitups[0] <= diffX && diffX <= isSitups[1] && isSitups[2] <= diffY && diffY <= isSitups[3] && isSitups[4] <= diffZ && diffZ <= isSitups[5] && isSitups[6] <= angleDiff && angleDiff <= isSitups[7] && !situpsDone){
                 serial.printf("Detected Situps. Starting the workout...\n\r");
                 situpsDone = true;
                 indicateProgress(2, 1); // Indicates what exercise has been identified
                 doWorkout(1);
               }
-              if(isPushups[0] <= diffZ && diffZ <= isPushups[1] && !pushupsDone && angleDiff < 50){
+              if(isPushups[0] <= diffX && diffX <= isPushups[1] && isPushups[2] <= diffY && diffY <= isPushups[3] && isPushups[4] <= diffZ && diffZ <= isPushups[5] && !pushupsDone){
                 serial.printf("Detected Pushups. Starting the workout...\n\r");
                 pushupsDone = true;
                 indicateProgress(2, 2);
                 doWorkout(2);
               }
-              if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1] && !jumpingJacksDone && angleDiff < 50){
+              if(isJumpingJacks[0] <= diffX && diffX <= isJumpingJacks[1] && isJumpingJacks[2] <= diffY && diffY <= isJumpingJacks[3] && isJumpingJacks[4] <= diffZ && diffZ <= isJumpingJacks[5] && !jumpingJacksDone){
                 serial.printf("Detected Jumping Jacks. Starting the workout...\n\r");
                 jumpingJacksDone = true;
                 indicateProgress(2, 3);
                 doWorkout(3);
               }
-              if(isSquats[0] <= diffY && diffY <= isSquats[1] && !squatsDone && angleDiff < 50) {
+              if(isSquats[0] <= diffX && diffX <= isSquats[1] && isSquats[2] <= diffY && diffY <= isSquats[3] && isSquats[4] <= diffZ && diffZ <= isSquats[5] && !squatsDone) {
                 serial.printf("Detected Squats. Starting the workout...\n\r");
                 squatsDone = true;
                 indicateProgress(2, 4);
@@ -230,18 +233,29 @@ void doSitups(int sets, int reps, int repMessage){
       acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
       
       if(iter % 2 != 0){
+        startX = X;
+        startY = Y;
+        startZ = Z; 
+        serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+        
         startAngle = pitch; 
-
         serial.printf("The start angle is %f\n\r", startAngle);
       }
       else{
+        endX = X;
+        endY = Y;
+        endZ = Z;
+        diffX = abs(startX - endX);
+        diffY = abs(startY - endY);
+        diffZ = abs(startZ - endZ);
+        serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
+
         endAngle = pitch;
         angleDiff = abs(startAngle - endAngle);
-
         serial.printf("The end angle is %f\n\r", endAngle);
         serial.printf("The difference between angles is %f\n\r", angleDiff);
 
-        if(isSitups[0] <= angleDiff && angleDiff <= isSitups[1]){
+        if(isSitups[0] <= diffX && diffX <= isSitups[1] && isSitups[2] <= diffY && diffY <= isSitups[3] && isSitups[4] <= diffX && diffX <= isSitups[5] && isSitups[6] <= angleDiff && angleDiff <= isSitups[7]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -284,15 +298,21 @@ void doPushups(int sets, int reps, int repMessage){
       acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
       
       if(iter % 2 != 0){
+        startX = X;
+        startY = Y;
         startZ = Z; 
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
+        endX = X;
+        endY = Y;
         endZ = Z;
+        diffX = abs(startX - endX);
+        diffY = abs(startY - endY);
         diffZ = abs(startZ - endZ);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isPushups[0] <= diffZ && diffZ <= isPushups[1]){
+        if(isPushups[0] <= diffX && diffX <= isPushups[1] && isPushups[2] <= diffY && diffY <= isPushups[3] && isPushups[4] <= diffZ && diffZ <= isPushups[5]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -314,12 +334,12 @@ void doPushups(int sets, int reps, int repMessage){
           }
         }
       }
-      wait(3);
+      wait(2);
     }
   }
 }
 
-// Junping Jacks - blue light
+// Jumping Jacks - blue light
 void doJumpingJacks(int sets, int reps, int repMessage){
 
   lightsOn(false, false, true, false);
@@ -335,15 +355,21 @@ void doJumpingJacks(int sets, int reps, int repMessage){
       acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
       
       if(iter % 2 != 0){
-        startY = Y; 
+        startX = X;
+        startY = Y;
+        startZ = Z; 
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
+        endX = X;
         endY = Y;
+        endZ = Z;
+        diffX = abs(startX - endX);
         diffY = abs(startY - endY);
+        diffZ = abs(startZ - endZ);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isJumpingJacks[0] <= diffY && diffY <= isJumpingJacks[1]){
+        if(isJumpingJacks[0] <= diffX && diffX <= isJumpingJacks[1] && isJumpingJacks[2] <= diffY && diffY <= isJumpingJacks[3] && isJumpingJacks[4] <= diffZ && diffZ <= isJumpingJacks[5]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);
@@ -365,7 +391,7 @@ void doJumpingJacks(int sets, int reps, int repMessage){
           }
         }
       }
-      wait(1);
+      wait(2);
     }
   }
 }
@@ -386,15 +412,21 @@ void doSquats(int sets, int reps, int repMessage){
       acc.ReadAngles(&roll, &pitch);      // reads roll and pitch angles
       
       if(iter % 2 != 0){
+        startX = X;
         startY = Y; 
+        startZ = Z;
         serial.printf("Start X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
       }
       else{
+        endX = X;
         endY = Y;
+        endZ = Z;
+        diffX = abs(startX - endX);
         diffY = abs(startY - endY);
+        diffZ = abs(startZ - endZ);
         serial.printf("Finish X: %d  Y: %d  Z: %d\n\r", X, Y, Z);
 
-        if(isSquats[0] <= diffY && diffY <= isSquats[1]){
+        if(isSquats[0] <= diffX && diffX <= isSquats[1] && isSquats[2] <= diffY && diffY <= isSquats[3] && isSquats[4] <= diffZ && diffZ <= isSquats[5]){
 
           counted_reps++;
           serial.printf("Rep # %d\n\r", counted_reps);

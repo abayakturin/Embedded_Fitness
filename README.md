@@ -21,7 +21,9 @@ I used this data to design the logic behind the program in the board. The board 
 
 You can program the number of sets and the number of repetitions for each exercise. You can also specify the number of repetitions it takes to trigger all 4 LEDs to indicate progress for each exercise. The program keeps track of the exercises that you have completed. Below you can see the log that outputs the relevant readings data along with the overall progress text message.
 
-<img src="https://github.com/abayakturin/Embedded_Fitness/blob/master/Log.PNG" alt="drawing" width="200"/>
+<img src="https://github.com/abayakturin/Embedded_Fitness/blob/master/Log.PNG" alt="drawing" width="300"/>
+
+<bold>Below, you can find the video demos where I demonstrate how the board works</bold>
 
 Jumping Jacks Video Demo: https://youtu.be/EmRaBL-TCf0
 

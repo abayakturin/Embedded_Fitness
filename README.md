@@ -1,6 +1,8 @@
 # Embedded_Fitness
 Embedded fitness against COVID: using a STM32 micro-controller for workout
 
+![alt text](https://www.st.com/bin/ecommerce/api/image.PF252419.en.feature-description-include-personalized-no-cpn-medium.jpg)
+
 Real-time embedded systems
 
 • Used C, Assembly and PlatformIO to program a STM32 board and its accelerometer

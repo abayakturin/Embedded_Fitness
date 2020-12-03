@@ -15,7 +15,11 @@ I used the accelerometer on the STM32F407G-DISC1 board to get the readings along
 
 ![alt text](https://hackster.imgix.net/uploads/image/file/163265/no-name?auto=compress%2Cformat&w=740&h=555&fit=max)
 
-I used this data to program the algorithms in the board. The board recognizes each exercise and proceeds to the programmed workout specified for the recognized exercise. Each exercise has an LED associated with it: Jumping Jacks - Blue LED, Pushups - Red LED, Situps - Orange LED, Sqauts - Green LED. You can program the number of sets and the number of repetitions for each exercise. You can also specify the number of repetitions it takes to trigger all 4 LEDs to indicate progress for each exercise.
+I used this data to program the algorithms in the board. The board recognizes each exercise and proceeds to the programmed workout specified for the recognized exercise. Each exercise has an LED associated with it: Jumping Jacks - Blue LED, Pushups - Red LED, Situps - Orange LED, Sqauts - Green LED. 
+
+![alt text](https://ezcontents.org/sites/default/files/2019-05/PB240064.JPG)
+
+You can program the number of sets and the number of repetitions for each exercise. You can also specify the number of repetitions it takes to trigger all 4 LEDs to indicate progress for each exercise.
 
 Jumping Jacks Video Demo: https://youtu.be/EmRaBL-TCf0
 

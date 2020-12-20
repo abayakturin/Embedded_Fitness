@@ -15,7 +15,7 @@ I used the accelerometer on the STM32F407G-DISC1 board to get the readings along
 
 ![alt text](https://hackster.imgix.net/uploads/image/file/163265/no-name?auto=compress%2Cformat&w=740&h=555&fit=max)
 
-I used this data to design the logic behind the program in the board. The board recognizes each exercise and proceeds to the programmed workout specified for the recognized exercise. The board triggers an LED tied to each specific exercise. Each exercise has an LED associated with it: Jumping Jacks - Blue LED, Pushups - Red LED, Situps - Orange LED, Sqauts - Green LED. If you start doing Squats, the board will trigger Green LED to indicate that it has recognized this exercise, and the specified workout program for Squats will start after you press the USER button.
+I used this data to design the logic behind the program in the board. The board recognizes each exercise and proceeds to the programmed workout specified for the recognized exercise. The board triggers an LED tied to each specific exercise. Each exercise has an LED associated with it: Jumping Jacks - Blue LED, Pushups - Red LED, Sit-ups - Orange LED, Squats - Green LED. If you start doing Squats, the board will trigger Green LED to indicate that it has recognized this exercise, and the specified workout program for Squats will start after you press the USER button.
 
 ![alt text](https://ezcontents.org/sites/default/files/2019-05/PB240064.JPG)
 

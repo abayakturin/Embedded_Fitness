@@ -25,6 +25,8 @@ You can program the number of sets and the number of repetitions for each exerci
 
 <bold>Below, you can find the video demos where I demonstrate how the board works</bold>
 
+Introduction: https://youtu.be/4T7n7oGfGqo
+
 Jumping Jacks Video Demo: https://youtu.be/EmRaBL-TCf0
 
 Pushups Video Demo: https://youtu.be/gyXKUe-X6DY

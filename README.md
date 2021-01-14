@@ -1,5 +1,5 @@
 # Embedded_Fitness
-Embedded fitness against COVID: using a STM32 micro-controller for workout
+Embedded fitness: using a STM32 micro-controller for workout
 
 ![alt text](https://www.st.com/bin/ecommerce/api/image.PF252419.en.feature-description-include-personalized-no-cpn-medium.jpg)
 
